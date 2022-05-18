@@ -1,5 +1,4 @@
-from random import shuffle
-from re import L
+from sklearn.metrics import classification_report
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -135,3 +134,67 @@ for e in range(0, EPOCHS):
 		# and update the weights
         opt.zero_grad()
         loss.backward()
+        opt.step()
+
+        # add the loss to the total training loss so far and
+		# calculate the number of correct predictions
+        totalTrainLoss += loss
+        trainCorrect += (pred.argmax(1) == y).type(torch.float).sum().item()
+
+    with torch.no_grad():
+        # evaluation mode
+        model.eval()
+
+        # loop over the validation set
+        for (x, y) in valDataLoader:
+            (x, y) = (x.to(device), y.to(device))
+            
+            # make the predictions and calculate the validation loss
+            pred = model(x)
+            totalValLoss += lossFn(pred, y)
+
+            # calculate the number of correct predictions
+            valCorrect += (pred.argmax(1) == y).type(torch.float).sum().item()
+    
+    # calculate the average training and validation loss
+    avgTrainLoss = totalTrainLoss / trainSteps
+    avgValLoss = totalValLoss / valSteps
+
+    # calculate the training and validation accuracy
+    trainCorrect = trainCorrect / len(trainDataLoader.dataset)
+    valCorrect = valCorrect / len(valDataLoader.dataset)
+
+    # update our training history
+    H["train_loss"].append(avgTrainLoss.cpu().detach().numpy())
+    H["train_acc"].append(trainCorrect)
+    H["val_loss"].append(avgValLoss.cpu().detach().numpy())
+    H["val_acc"].append(valCorrect)
+
+    # print the model training and validation information
+    print("[INFO] EPOCH: {}/{}".format(e + 1, EPOCHS))
+    print("Train loss: {:.6f}, Train accuracy: {:.4f}".format(avgTrainLoss, trainCorrect))
+    print("Val loss: {:.6f}, Val accuracy: {:.4f}\n".format(avgValLoss, valCorrect))
+
+endTime = time.time()
+print("[INFO] total time taken to train the model: {:.2f}s".format(endTime - startTime))
+
+
+print("[INFO] evaluating network...")
+
+# turn off autograd for testing evaluation
+with torch.no_grad():
+	# set the model in evaluation mode
+    model.eval()
+	
+	# initialize a list to store our predictions
+    preds = []
+	# loop over the test set
+    for (x, y) in testDataLoader:
+		# send the input to the device
+        x = x.to(device)
+		# make the predictions and add them to the list
+        pred = model(x)
+        preds.extend(pred.argmax(axis=1).cpu().numpy())
+
+print(classification_report(testData.targets.cpu().numpy(),np.array(preds), target_names=testData.classes))
+
