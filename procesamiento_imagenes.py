@@ -1,0 +1,95 @@
+import cv2
+import mediapipe as mp
+import numpy as np
+mp_drawing = mp.solutions.drawing_utils
+mp_drawing_styles = mp.solutions.drawing_styles
+mp_pose = mp.solutions.pose
+
+def get_segment_hip(right_hip:tuple, left_hip:tuple):
+    x1, y1 = right_hip
+    x2, y2 = left_hip
+
+    size = abs(x1-x2)
+    print(f'({x1},{y1})')
+    print(f'({x2},{y2})')
+    print(f'size: {size}')
+
+IMAGE_FILES = ['jeiel_2_otro.png']#,'jeiel_2_otro.png', 'female_0001_frontal.png', 'female_0001_lateral.png']
+BG_COLOR = (255, 255, 255) # gray
+with mp_pose.Pose(
+    static_image_mode=True,
+    model_complexity=2,
+    enable_segmentation=True,
+    min_detection_confidence=0.5) as pose:
+  for idx, file in enumerate(IMAGE_FILES):
+    image = cv2.imread(file)
+    image_height, image_width, _ = image.shape
+
+    # Convert the BGR image to RGB before processing.
+    results = pose.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+
+    if not results.pose_landmarks:
+      continue
+    """print(
+        f'Nose coordinates: ('
+        f'{results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HIP].x * image_width}, '
+        f'{results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HIP].y * image_height})'
+    )"""
+
+   
+    # Draw segmentation on the image.
+    # To improve segmentation around boundaries, consider applying a joint
+    # bilateral filter to "results.segmentation_mask" with "image".
+    annotated_image = image.copy()
+    condition = np.stack((results.segmentation_mask,) * 3, axis=-1) > 0.1
+    bg_image = np.zeros(image.shape, dtype=np.uint8)
+    bg_image[:] = BG_COLOR
+    annotated_image = np.where(condition, annotated_image, bg_image)
+    annotated_image = cv2.cvtColor(annotated_image, cv2.COLOR_RGB2GRAY)
+    #annotated_image[annotated_image!=255]=0
+    cv2.imshow("aaa", annotated_image)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+
+    # cae e risa om
+    x1 = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HIP].x * image_width
+    y1 = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_HIP].y * image_height
+
+    x2 = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_HIP].x * image_width
+    y2 = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_HIP].y * image_height
+
+    print(f'({x1},{y1})')
+    get_segment_hip((x1,y1), (x2,y2))
+
+    x_rs = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].x * image_width
+    y_rs = results.pose_landmarks.landmark[mp_pose.PoseLandmark.RIGHT_SHOULDER].y * image_height
+
+    x_ls = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].x * image_width
+    y_ls = results.pose_landmarks.landmark[mp_pose.PoseLandmark.LEFT_SHOULDER].y * image_height
+
+    img2 = annotated_image.copy()
+    x_rs = x_rs * 0.99
+    img2[:, :int(x_rs)][img2[:,:int(x_rs)]!=255]=255
+    img_crop = img2[int(y_rs-100):int(y_ls+100), int(x_rs-100):int(x_ls+100)]
+    cv2.imshow("prueba", img_crop)
+    cv2.waitKey()
+    cv2.destroyAllWindows()
+    
+
+
+    # Draw pose landmarks on the image.
+    mp_drawing.draw_landmarks(
+        annotated_image,
+        results.pose_landmarks,
+        mp_pose.POSE_CONNECTIONS,
+        mp_drawing.DrawingSpec(color=(0,0,255), thickness=2, circle_radius=2),
+        mp_drawing.DrawingSpec(color=(0,250,0), thickness=2),
+    )
+    #    landmark_drawing_spec=mp_drawing_styles.get_default_pose_landmarks_style())
+    cv2.imwrite('./results/annotated_image' + str(idx) + '.png', annotated_image)
+    # Plot pose world landmarks.
+    #mp_drawing.plot_landmarks(
+    #   results.pose_world_landmarks, mp_pose.POSE_CONNECTIONS)
+
+
+

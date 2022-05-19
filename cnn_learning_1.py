@@ -63,7 +63,7 @@ optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
 
 
 #TRAIN NN
-"""for epoch in range(2):
+for epoch in range(2):
     running_loss= 0.0
     for i, data in enumerate(trainloader, 0):
         inputs, labels = data
@@ -83,7 +83,7 @@ optimizer = optim.SGD(cnn.parameters(), lr=0.001, momentum=0.9)
 print('Finished Training')
 
 PATH_MODEL = './cnn_trained.pth'
-torch.save(cnn.state_dict(), PATH_MODEL)"""
+torch.save(cnn.state_dict(), PATH_MODEL)
 
 #TEST NN
 """dataiter = iter(testloader)

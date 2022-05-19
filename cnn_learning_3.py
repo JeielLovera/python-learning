@@ -26,7 +26,7 @@ class SecondCNN(nn.Module):
 
         self.fc1 = nn.Linear(in_features=800, out_features=500)
         self.relu3 = nn.ReLU()
-
+        
         self.fc2 = nn.Linear(in_features=500, out_features=classes)
         self.logSoftmax = nn.LogSoftmax(dim=1)
 
@@ -101,6 +101,8 @@ valSteps = len(valDataLoader.dataset) // BATCH_SIZE
 model = SecondCNN(numChannels=1, classes=len(trainData.dataset.classes)).to(device)
 opt = optim.Adam(model.parameters(), lr=INIT_LR)
 lossFn = nn.NLLLoss()
+
+criterion = nn.MSELoss()
 H = {
 	"train_loss": [],
 	"train_acc": [],
@@ -197,4 +199,5 @@ with torch.no_grad():
         preds.extend(pred.argmax(axis=1).cpu().numpy())
 
 print(classification_report(testData.targets.cpu().numpy(),np.array(preds), target_names=testData.classes))
+
 
