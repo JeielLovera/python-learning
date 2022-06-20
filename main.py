@@ -6,7 +6,7 @@ mp_drawing_styles = mp.solutions.drawing_styles
 mp_pose = mp.solutions.pose
 
 # For static images:
-IMAGE_FILES = ['female_0001_frontal.png', 'female_0001_lateral.png']
+IMAGE_FILES = ['jeiel_1_otro.png','jeiel_2_otro.png', 'female_0001_frontal.png', 'female_0001_lateral.png']
 BG_COLOR = (192, 192, 192) # gray
 with mp_pose.Pose(
     static_image_mode=True,
